@@ -1,23 +1,52 @@
 try:
     from .virtual_filesystem import FileSystem, CannotReadDirectory
+    from .user_system import UserSystem
+    from .process_manager import ProcessManager
+    from .system_commands import SystemCommands
 except ImportError:
     from virtual_filesystem import FileSystem, CannotReadDirectory
+    from user_system import UserSystem
+    from process_manager import ProcessManager
+    from system_commands import SystemCommands
+    
+import shlex
 
 class VirtualCommandExecutor:
     def __init__(self):
         self.fs = FileSystem()
+        self.user_system = UserSystem()
+        self.process_manager = ProcessManager()
+        self.system_commands = SystemCommands(
+            self.user_system,
+            self.process_manager
+        )
 
-    def execute_terminal_command(self, user_input):
-        tokens = user_input.strip().split()
+    def execute_terminal_command(self, command):
+        command = command.strip()
 
-        if not tokens:
+        if command == "":
+            return ""
+
+        try:
+            tokens = shlex.split(command)
+        except ValueError as e:
+            return f"parse error: {e}"
+
+        if len(tokens) == 0:
             return ""
 
         cmd = tokens[0]
         args = tokens[1:]
 
+        # 1. 먼저 사용자/프로세스 명령어인지 확인
+        system_result = self.system_commands.execute(cmd, args)
+
+        if system_result is not None:
+            return system_result
+
         try:
             if cmd == "help":
+                
                 return (
                     "--- StudentOS Commands ---\n"
                     "help              : show help\n"

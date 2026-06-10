@@ -37,14 +37,19 @@ class AssistantGUI:
         self.root.after(100, self._poll_results)
         
     def _get_prompt(self) -> str:
+        username = self.executor.user_system.current_user.username
         path = self.executor.fs.pwd()
 
         if path == "/":
+            display_path = "/"
+        elif path == self.executor.user_system.current_user.home:
             display_path = "~"
+        elif path.startswith(self.executor.user_system.current_user.home + "/"):
+            display_path = "~" + path[len(self.executor.user_system.current_user.home):]
         else:
             display_path = path
 
-        return f"user@pythonOS:{display_path}$ "
+        return f"{username}@pythonOS:{display_path}$ "
 
     # ==========================================
     # 1. GUI 레이아웃
